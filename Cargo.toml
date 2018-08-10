@@ -1,0 +1,6 @@
+[package]
+name = "ludum_dare_prep"
+version = "0.1.0"
+authors = ["nathanieltan <nathaniel98.tan@gmail.com>"]
+
+[dependencies]
