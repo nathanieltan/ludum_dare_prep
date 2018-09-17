@@ -4,3 +4,11 @@ version = "0.1.0"
 authors = ["nathanieltan <nathaniel98.tan@gmail.com>"]
 
 [dependencies]
+ggez = "0.4"
+rand = "0.5"
+specs = "0.12"
+specs-derive = "0.2.0"
+ggwp-zgui = { path="ggwp-zgui" }
+ggwp-zscene = { path="ggwp-zscene" }
+zcomponents = { path = "zcomponents" }
+ncollide2d = "0.17"
