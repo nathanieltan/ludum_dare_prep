@@ -1,6 +1,5 @@
 use ggez::graphics::*;
 use specs::*;
-use scene::Sprite;
 
 
 /// ///////////////////////////////////////////////////////////////////////
@@ -24,7 +23,3 @@ pub struct Size(pub Point2);
 #[derive(Clone, Debug, Component)]
 #[storage(VecStorage)]
 pub struct Mass(pub Point2);
-
-#[derive(Clone, Debug, Component)]
-#[storage(VecStorage)]
-pub struct MySprite(pub Sprite);

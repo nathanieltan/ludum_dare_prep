@@ -3,10 +3,14 @@ use ggez::graphics::{Point2, Vector2};
 use specs;
 use specs::Builder;
 
-use scene::Sprite;
+use warmy;
+use warmy::SimpleKey;
+use std::path;
+
 use components::*;
 
 pub struct World {
+	pub assets: warmy::Store<ggez::Context, SimpleKey>,
 	pub specs_world: specs::World,
 }
 
@@ -17,23 +21,31 @@ impl World{
 		self.specs_world.register::<Motion>();
 		self.specs_world.register::<Size>();
 		self.specs_world.register::<Mass>();
-		self.specs_world.register::<Sprite>();
 	}
 
-	pub fn new(ctx: &mut ggez::Context) -> Self {
+	pub fn new(ctx: &mut ggez::Context, resource_dir: Option<path::PathBuf>) -> Self {
+    	// ggez assumes absolute paths and warmy assumes system-absolute paths, 
+		// so we have warmy look in the specified resource directory 
+		// ($CARGO_DIR/resources) or the ggez default resource dir
+		let resource_pathbuf: path::PathBuf = match resource_dir {
+			Some(s) => s,
+			None => ctx.filesystem.get_resources_dir().to_owned(),
+		};
+
+		let opt = warmy::StoreOpt::default().set_root(resource_pathbuf);
+		let store = warmy::Store::new(opt)
+			.expect("Could not create asset store? Does the directory exist?");
+
 		let w = specs::World::new();
 
 		let mut the_world = Self {
+			assets: store,
 			specs_world: w,
 		};
 
 		the_world.register_components();
 
-		the_world
-			.specs_world
-			.create_entity() 
-			.with(Position(Point2::new(0.0,0.0)))
-			.build();
+		the_world.register_components();
 
 		the_world
 	}
