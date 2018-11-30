@@ -8,10 +8,13 @@ use warmy::SimpleKey;
 use std::path;
 
 use components::*;
+use input;
 
 pub struct World {
 	pub assets: warmy::Store<ggez::Context, SimpleKey>,
+	pub input: input::InputState,
 	pub specs_world: specs::World,
+	pub quit: bool,
 }
 
 impl World{
@@ -40,10 +43,10 @@ impl World{
 
 		let mut the_world = Self {
 			assets: store,
+			input: input::InputState::new(),
 			specs_world: w,
+			quit: false,
 		};
-
-		the_world.register_components();
 
 		the_world.register_components();
 

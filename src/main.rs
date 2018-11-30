@@ -1,56 +1,93 @@
 extern crate ggez;
+extern crate ggez_goodies;
 extern crate rand;
 extern crate warmy;
 extern crate specs;
-extern crate ggwp_zscene as scene;
+
 
 use ggez::conf;
-use ggez::event;
 use ggez::event::*;
-use ggez::{Context, ContextBuilder, GameResult};
+use ggez::{Context, ContextBuilder, GameResult, timer, graphics, event};
 use std::path;
 //use ggez::graphics::{self, Point2, Rect};
 
 #[macro_use]
 extern crate specs_derive;
 
-//Modules for ECS
+//Modules for ECS and other content
+mod scenes;
 mod components;
-mod system;
+mod systems;
 mod world;
 
-mod screen;
+// Utility Modules
+mod input;
+
 
 struct Game{
-	screens: screen::Screens,
+	scenes: scenes::FSceneStack,
+	input_binding: input::InputBinding,
 }
 
 impl Game {
-	fn new(resource_dir: Option<path::PathBuf>, context: &mut Context) -> GameResult<Game>{
-		let mut world = world::World::new(context, resource_dir.clone());
-		let ocean = Box::new(screen::Ocean::new(context, &mut world)?);
-		let screens = screen::Screens::new(ocean);
-		let mut this = Game { 
-			screens 
-		};
-		
-		Ok(this)
+	fn new(resource_dir: Option<path::PathBuf>, ctx: &mut Context) -> Self{
+		let mut world = world::World::new(ctx, resource_dir.clone());
+
+		// Sets up scenestack and inital scenes
+		let mut scenestack = scenes::FSceneStack::new(ctx, world);
+		let level_scene = scenes::level::LevelScene::new(ctx, &mut scenestack.world);
+		scenestack.push(Box::new(level_scene));
+
+		Game { 
+			scenes: scenestack,
+			input_binding: input::create_input_binding(),
+		}
 	}
 }
 
 impl EventHandler for Game {
-	fn update(&mut self, context: &mut Context) -> GameResult<()> {
-		self.screens.update(context)
+	fn update(&mut self, ctx: &mut Context) -> GameResult<()> {
+		const DESIRED_FPS: u32 = 60; 		// TODO Move to config location/file
+		while timer::check_update_time(ctx, DESIRED_FPS){
+			self.scenes.update();
+		}
+		self.scenes.world.assets.sync(ctx);
+		self.scenes.world.input.update(1.0/ 60.0);
+
+		Ok(())
 	}
 
-	fn draw(&mut self, context: &mut Context) -> GameResult<()> {
-		self.screens.draw(context)
+	fn draw(&mut self, ctx: &mut Context) -> GameResult<()> {
+		graphics::clear(ctx);
+		self.scenes.draw(ctx);
+		graphics::present(ctx);
+		Ok(())
 	}
+
+    fn key_down_event(
+        &mut self,
+        _ctx: &mut Context,
+        keycode: Keycode,
+        _keymod: Mod,
+        _repeat: bool,
+    ) {
+        if let Some(ev) = self.input_binding.resolve(keycode) {
+            self.scenes.world.input.update_effect(ev, true);
+            self.scenes.input(ev, true);
+        }
+    }
+
+    fn key_up_event(&mut self, _ctx: &mut Context, keycode: Keycode, _keymod: Mod, _repeat: bool) {
+        if let Some(ev) = self.input_binding.resolve(keycode) {
+            self.scenes.world.input.update_effect(ev, false);
+            self.scenes.input(ev, false);
+        }
+}
 }
 
 fn main() {
-    let mut cb = ContextBuilder::new("ld42", "icefoxen")
-        .window_setup(conf::WindowSetup::default().title("Running In To Space"))
+    let mut cb = ContextBuilder::new("ldPrep", "sourdile")
+        .window_setup(conf::WindowSetup::default().title("Ludum Dare Prep"))
         .window_mode(conf::WindowMode::default().dimensions(800, 600));
 
     // We add the CARGO_MANIFEST_DIR/resources to the filesystems paths so
@@ -62,24 +99,18 @@ fn main() {
         res_path.push("resources");
         res_path
     });
-    // If we have such a path then add it to the context builder too
+    // If we have such a path then add it to the ctx builder too
     // (modifying the cb from inside a closure gets sticky)
     if let Some(ref s) = cargo_path {
         cb = cb.add_resource_path(s);
 }
-    let mut context = cb.build().unwrap();
-    
-    match Game::new(None, &mut context) {
-    	Err(e) => {
-    		print!("Error: {}",e)
-    	}
-    	Ok(ref mut game) => {
-    		let result = run(&mut context, game);
-    		if let Err(e) = result{
+    let mut ctx = &mut cb.build().unwrap();
+	let myGame = &mut Game::new(None,ctx);
 
-    		} else {
-    			
-    		}
-    	}
-    }
+	if let Err(e) = event::run(ctx, myGame) {
+		println!("Error encountered: {}", e);
+	}
+	else {
+		println!("Game exited cleanly.");
+	}
 }
