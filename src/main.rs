@@ -3,6 +3,12 @@ extern crate ggez_goodies;
 extern crate rand;
 extern crate warmy;
 extern crate specs;
+extern crate nalgebra;
+#[macro_use]
+extern crate log;
+extern crate ncollide2d;
+#[macro_use]
+extern crate failure;
 
 
 use ggez::conf;
@@ -22,7 +28,9 @@ mod world;
 
 // Utility Modules
 mod input;
-
+mod error;
+mod util;
+mod resources;
 
 struct Game{
 	scenes: scenes::FSceneStack,
@@ -35,7 +43,8 @@ impl Game {
 
 		// Sets up scenestack and inital scenes
 		let mut scenestack = scenes::FSceneStack::new(ctx, world);
-		let level_scene = scenes::level::LevelScene::new(ctx, &mut scenestack.world);
+		let level_scene = scenes::level::LevelScene::new(ctx, &mut scenestack.world)
+			.expect("Could not create initial scene?!");
 		scenestack.push(Box::new(level_scene));
 
 		Game { 

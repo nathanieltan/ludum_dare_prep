@@ -4,14 +4,13 @@ use specs;
 use specs::Builder;
 
 use warmy;
-use warmy::SimpleKey;
 use std::path;
 
 use components::*;
 use input;
 
 pub struct World {
-	pub assets: warmy::Store<ggez::Context, SimpleKey>,
+	pub assets: warmy::Store<ggez::Context>,
 	pub input: input::InputState,
 	pub specs_world: specs::World,
 	pub quit: bool,
